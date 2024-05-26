@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tic-Tac-Toe</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            color: #333;
+            margin: 20px 0;
+        }
+        table {
+            border-collapse: collapse;
+            margin: 20px auto;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            background-color: #fff;
+        }
+        td {
+            width: 60px;
+            height: 60px;
+            text-align: center;
+            font-size: 24px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        td:hover {
+            background-color: #f1f1f1;
+        }
+        td[data-value="1"] {
+            color: #ff6347;  /* X color */
+        }
+        td[data-value="-1"] {
+            color: #4682b4;  /* O color */
+        }
+        .button {
+            background-color: #4CAF50; /* Green */
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 20px 2px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+    </style>
+    <script>
+        let board;
+
+        function resetBoard() {
+            fetch('/reset', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                board = data.board;
+                renderBoard();
+            });
+        }
+
+        function renderBoard() {
+            const table = document.getElementById('board');
+            table.innerHTML = '';
+            for (let i = 0; i < 3; i++) {
+                const row = document.createElement('tr');
+                for (let j = 0; j < 3; j++) {
+                    const cell = document.createElement('td');
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    cell.dataset.value = board[i][j];
+                    cell.textContent = board[i][j] === 1 ? 'X' : (board[i][j] === -1 ? 'O' : '');
+                    cell.addEventListener('click', makeMove);
+                    row.appendChild(cell);
+                }
+                table.appendChild(row);
+            }
+        }
+
+        function makeMove(event) {
+            const row = event.target.dataset.row;
+            const col = event.target.dataset.col;
+            fetch('/move', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ row: parseInt(row), col: parseInt(col) })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    board = data.board;
+                    renderBoard();
+                    if (data.game_over) {
+                        alert(data.winner === null ? 'It\'s a draw!' : (data.winner === 1 ? 'You win!' : 'Agent wins!'));
+                        resetBoard();
+                    }
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            resetBoard();
+        });
+    </script>
+</head>
+<body>
+    <h1>Tic-Tac-Toe</h1>
+    <table id="board"></table>
+    <button class="button" onclick="resetBoard()">Reset Game</button>
+</body>
+</html>
